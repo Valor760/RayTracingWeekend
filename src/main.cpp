@@ -77,29 +77,6 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
 }
 
-void CalculatePixelColor(
-    const int i,
-    const int j,
-    const int width, 
-    const int height, 
-    const int samples,
-    const int depth,
-    const camera& cam,
-    const hittable_list& world,
-    std::vector<Pixel>* buffer
-    ) {
-    color pixel_color(0, 0, 0);
-    for(int s = 0; s < samples; s++) {
-        auto u = double(i + random_double()) / (width - 1);
-        auto v = double(j + random_double()) / (height - 1);
-
-        ray r = cam.get_ray(u, v);
-
-        pixel_color += ray_color(r, world, depth);
-    }
-    write_color(pixel_color, samples, buffer);
-}
-
 void WriteOutOfBuffer(std::ostream& out, const Pixel& p) {
     out << p.r << ' '
         << p.g << ' '
@@ -109,11 +86,11 @@ void WriteOutOfBuffer(std::ostream& out, const Pixel& p) {
 int main(int argc, char** argv) {
     // Image
     constexpr auto aspect_ratio = 16.0 / 9.0;
-    constexpr int image_width = 400;
+    constexpr int image_width = 1600;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
 
-    constexpr int samples_per_pixel = 10;
-    constexpr int max_depth = 5;
+    constexpr int samples_per_pixel = 100;
+    constexpr int max_depth = 8;
 
     // World
     hittable_list world = random_scene();
@@ -131,11 +108,37 @@ int main(int argc, char** argv) {
     // Camera
     point3 lookfrom(13, 2, 3);
     point3 lookat(0, 0, 0);
-    camera cam(lookfrom, lookat, vec3(0,1,0), 45, aspect_ratio);
+    camera cam(lookfrom, lookat, vec3(0,1,0), 25, aspect_ratio);
 
-    RTW::Utils::ThreadPool* pool = new RTW::Utils::ThreadPool();
-    std::vector<Pixel> buffer;
-    buffer.reserve(image_height * image_width);
+    RTW::Utils::ThreadPool pool {7};
+    Pixel* buffer = new Pixel[image_height * image_width];
+    //std::for_each(begin(buffer), end(buffer), [image_width](std::vector<Pixel> column){ column.reserve(image_width); });
+    std::vector<std::future<void>> futures;
+    // futures.reserve(image_height * image_width);
+
+
+    auto renderPixel = [buffer](
+        const int i,
+        const int j,
+        const int width, 
+        const int height, 
+        const int samples,
+        const int depth,
+        const camera& cam,
+        const hittable_list& world
+        
+    ){
+        color pixel_color(0, 0, 0);
+        for(int s = 0; s < samples; s++) {
+            auto u = double(i + random_double()) / (width - 1);
+            auto v = double(j + random_double()) / (height - 1);
+
+            ray r = cam.get_ray(u, v);
+
+            pixel_color += ray_color(r, world, depth);
+        }
+        buffer[j * width + i] = write_color(pixel_color, samples);
+    };
 
     // Render
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -143,19 +146,23 @@ int main(int argc, char** argv) {
         std::cerr << "\rLines remaining: " << j << ' ' << std::flush;
 
         for(int i = 0; i < image_width; ++i) {
-            pool->AddTask(CalculatePixelColor,
-                i, j, image_width, image_height,
-                samples_per_pixel, max_depth,
-                cam, world, &buffer
-            );
+            futures.emplace_back(
+                pool.AddTask(renderPixel,
+                    i, j, image_width, image_height,
+                    samples_per_pixel, max_depth,
+                    cam, world
+            ));
         }
     }
+    // Wait all tasks
+    std::for_each(begin(futures), end(futures), [](auto& future){ future.wait(); });
     std::cerr << "\nDone rendering\n";
     std::cerr << "Writing to file\n";
 
-    for(auto& item : buffer) {
-        WriteOutOfBuffer(std::cout, item);
-    }
+    for(int j = image_height-1; j >= 0; --j)
+        for(int i = 0; i < image_width ; ++i) {
+            WriteOutOfBuffer(std::cout, buffer[j * image_width + i]);
+        }
 
     std::cerr << "Done writing!\n";
 
