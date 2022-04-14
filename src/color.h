@@ -8,7 +8,7 @@
 #include "common.h"
 
 
-void write_color(color pixel_color, int samples_per_pixel, std::vector<Pixel>& buffer) {
+void write_color(color pixel_color, int samples_per_pixel, std::vector<Pixel>* buffer) {
     auto r = pixel_color.x();
     auto g = pixel_color.y();
     auto b = pixel_color.z();
@@ -23,7 +23,7 @@ void write_color(color pixel_color, int samples_per_pixel, std::vector<Pixel>& b
                static_cast<int>(256 * clamp(g, 0.0, 0.999)),
                static_cast<int>(256 * clamp(b, 0.0, 0.999))};
     
-    buffer.push_back(p);
+    buffer->push_back(p);
 }
 
 

@@ -86,7 +86,7 @@ void CalculatePixelColor(
     const int depth,
     const camera& cam,
     const hittable_list& world,
-    std::vector<Pixel>& buffer
+    std::vector<Pixel>* buffer
     ) {
     color pixel_color(0, 0, 0);
     for(int s = 0; s < samples; s++) {
@@ -135,6 +135,7 @@ int main(int argc, char** argv) {
 
     RTW::Utils::ThreadPool* pool = new RTW::Utils::ThreadPool();
     std::vector<Pixel> buffer;
+    buffer.reserve(image_height * image_width);
 
     // Render
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -145,7 +146,7 @@ int main(int argc, char** argv) {
             pool->AddTask(CalculatePixelColor,
                 i, j, image_width, image_height,
                 samples_per_pixel, max_depth,
-                cam, world, buffer
+                cam, world, &buffer
             );
         }
     }
