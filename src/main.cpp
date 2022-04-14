@@ -85,7 +85,8 @@ void CalculatePixelColor(
     const int samples,
     const int depth,
     const camera& cam,
-    const hittable_list& world
+    const hittable_list& world,
+    std::vector<Pixel>& buffer
     ) {
     color pixel_color(0, 0, 0);
     for(int s = 0; s < samples; s++) {
@@ -96,7 +97,13 @@ void CalculatePixelColor(
 
         pixel_color += ray_color(r, world, depth);
     }
-    write_color(std::cout, pixel_color, samples);
+    write_color(pixel_color, samples, buffer);
+}
+
+void WriteOutOfBuffer(std::ostream& out, const Pixel& p) {
+    out << p.r << ' '
+        << p.g << ' '
+        << p.b << '\n';
 }
 
 int main(int argc, char** argv) {
@@ -126,7 +133,8 @@ int main(int argc, char** argv) {
     point3 lookat(0, 0, 0);
     camera cam(lookfrom, lookat, vec3(0,1,0), 45, aspect_ratio);
 
-    RTW::Utils::ThreadPool* pool = new RTW::Utils::ThreadPool(1);
+    RTW::Utils::ThreadPool* pool = new RTW::Utils::ThreadPool();
+    std::vector<Pixel> buffer;
 
     // Render
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -137,11 +145,18 @@ int main(int argc, char** argv) {
             pool->AddTask(CalculatePixelColor,
                 i, j, image_width, image_height,
                 samples_per_pixel, max_depth,
-                cam, world
+                cam, world, buffer
             );
         }
     }
-    std::cerr << "\nDone\n";
+    std::cerr << "\nDone rendering\n";
+    std::cerr << "Writing to file\n";
+
+    for(auto& item : buffer) {
+        WriteOutOfBuffer(std::cout, item);
+    }
+
+    std::cerr << "Done writing!\n";
 
     return 0;
 }

@@ -11,6 +11,11 @@
 using std::shared_ptr;
 using std::make_shared;
 
+// Structures
+struct Pixel {
+    int r, g, b;
+};
+
 
 // Constants
 constexpr double infinity = std::numeric_limits<double>::infinity();
