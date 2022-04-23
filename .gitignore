@@ -1,2 +1,8 @@
 /build
 .vscode/settings.json
+/x64
+/RT in Weekend/x64
+*.sln
+*.filters
+*.user
+/.vs
