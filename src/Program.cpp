@@ -6,16 +6,28 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 
+#include "utils/thread_pool.h"
+
 
 namespace RTWeekend {
 void Program::Run() {
+    // Init program and texture
     Init();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_texture);
 
-    while (!glfwWindowShouldClose(window)) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bufferData);
+    Utils::ThreadPool thread_pool(7);
+    Renderer renderer(m_width, m_height, m_bufferData);
 
+    // Run rendering
+    bool rendering = false;
+    while (!glfwWindowShouldClose(window)) {
+        if (m_RenderState == RenderState::kRenderRunning && !rendering) {
+            renderer.StartRender();
+            rendering = true;
+        }
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bufferData);
         glUseProgram(m_program);
 
         glBindVertexArray(m_VAO);
@@ -36,6 +48,8 @@ void Program::Init() {
 
     window = glfwCreateWindow(m_width, m_height, "Ray Tracing in a Weekend", nullptr, nullptr);
     glfwMakeContextCurrent(window);
+
+    glfwSetKeyCallback(window, keyCallBack);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         throw std::runtime_error("Failed to initalize GLAD!\n");
@@ -145,16 +159,16 @@ void Program::CompileShaders() {
     glDeleteShader(sFragment);
 }
 
-void Program::keyCallBack() {
+void Program::keyCallBack(GLFWwindow* window, int key, int scan_code, int action, int mode) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
     // Start rendering
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-        m_RenderState = kRenderRunning;
+        m_RenderState = RenderState::kRenderRunning;
     // Stop rendering
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        m_RenderState = kRenderStop;
+        m_RenderState = RenderState::kRenderStop;
 }
 
 Program::~Program() {

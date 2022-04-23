@@ -4,13 +4,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "Renderer.h"
+
 
 namespace RTWeekend {
-enum RenderState {
-    kRenderStop,
-    kRenderRunning
-};
-
 class Program {
 public:
     GLFWwindow* window = nullptr;
@@ -24,7 +21,7 @@ private:
     Program();
     void CompileShaders();
     void Init();
-    void keyCallBack();
+    static void keyCallBack(GLFWwindow* window, int key, int scan_code, int action, int mode);
 
 private:
     const int m_width;
@@ -34,7 +31,7 @@ private:
     GLuint m_VAO;
     GLuint m_texture;
     GLuint m_program;
-    RenderState m_RenderState = kRenderStop;
+    static inline RenderState m_RenderState = RenderState::kRenderStop;
 };
 } // namespace RTWeekend
 #endif

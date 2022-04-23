@@ -117,9 +117,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;_DEBUG;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,21 +147,28 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="glad.c" />
+    <ClCompile Include="src\graphics\Camera.cpp" />
+    <ClCompile Include="src\graphics\HittableList.cpp" />
+    <ClCompile Include="src\graphics\Material.cpp" />
+    <ClCompile Include="src\graphics\Ray.cpp" />
+    <ClCompile Include="src\graphics\Sphere.cpp" />
+    <ClCompile Include="src\graphics\vec3.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Program.cpp" />
+    <ClCompile Include="src\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\camera.h" />
-    <ClInclude Include="src\color.h" />
-    <ClInclude Include="src\common.h" />
-    <ClInclude Include="src\hittable.h" />
-    <ClInclude Include="src\hittable_list.h" />
-    <ClInclude Include="src\material.h" />
+    <ClInclude Include="src\graphics\Camera.h" />
+    <ClInclude Include="src\graphics\common.h" />
+    <ClInclude Include="src\graphics\Hittable.h" />
+    <ClInclude Include="src\graphics\HittableList.h" />
+    <ClInclude Include="src\graphics\Material.h" />
+    <ClInclude Include="src\graphics\Ray.h" />
+    <ClInclude Include="src\graphics\Sphere.h" />
+    <ClInclude Include="src\graphics\vec3.h" />
     <ClInclude Include="src\Program.h" />
-    <ClInclude Include="src\ray.h" />
-    <ClInclude Include="src\sphere.h" />
+    <ClInclude Include="src\Renderer.h" />
     <ClInclude Include="src\utils\thread_pool.h" />
-    <ClInclude Include="src\vec3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
