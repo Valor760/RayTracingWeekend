@@ -21,11 +21,25 @@ void Program::Run() {
 
     // Run rendering
     bool rendering = false;
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width),
+        static_cast<float>(m_height), 0.0f, -1.0f, 1.0f);
     while (!glfwWindowShouldClose(window)) {
         if (m_RenderState == RenderState::kRenderRunning && !rendering) {
             renderer.StartRender();
             rendering = true;
         }
+
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+
+        // TODO: Play around with this stuff, to figure out how it particulary works
+        model = glm::translate(model, glm::vec3(0.5f * m_width, 0.5f * m_height, 0.0f));
+        model = glm::rotate(model, glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::translate(model, glm::vec3(-0.5f * m_width, -0.5f * m_height, 0.0f));
+
+        model = glm::scale(model, glm::vec3(m_width, m_height, 1.0f));
+        glUniformMatrix4fv(glGetUniformLocation(m_program, "model"), 1, false, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(m_program, "projection"), 1, false, glm::value_ptr(projection));
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bufferData);
         glUseProgram(m_program);
@@ -85,6 +99,16 @@ void Program::Init() {
         1.0f, 1.0f, 1.0f, 1.0f,
         1.0f, -1.0f, 1.0f, -1.0f
     };
+    //float vertices[] = {
+    //    // pos      // tex
+    //    0.0f, 1.0f, 0.0f, 1.0f,
+    //    1.0f, 0.0f, 1.0f, 0.0f,
+    //    0.0f, 0.0f, 0.0f, 0.0f,
+
+    //    //-1.0f, 1.0f, -1.0f, 1.0f,
+    //    //1.0f, 1.0f, 1.0f, 1.0f,
+    //    //1.0f, -1.0f, 1.0f, -1.0f
+    //};
 
     // Bind buffers
     glGenVertexArrays(1, &m_VAO);
@@ -103,10 +127,12 @@ void Program::CompileShaders() {
     const char* vertex_shader =
         "#version 330 core\n"
         "layout(location = 0) in vec4 vertex;\n"
+        "uniform mat4 model;\n"
+        "uniform mat4 projection;"
         "out vec2 texture_coords;\n"
         "void main() {\n"
             "texture_coords = vertex.zw;"
-            "gl_Position = vec4(vertex.xy, 0.0, 1.0);"
+            "gl_Position = projection * model * vec4(vertex.xy, 0.0, 1.0);"
         "}\0";
     const char* fragment_shader =
         "#version 330 core\n"

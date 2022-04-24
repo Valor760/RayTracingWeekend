@@ -15,8 +15,8 @@ enum class RenderState {
 
 class Renderer {
 public:
-	const int m_samples = 100;
-	const int m_depth = 8;
+	const int m_samples = 1;
+	const int m_depth = 2;
 	std::unique_ptr<Graphics::Camera> m_camera;
 	const int m_width;
 	const int m_height;

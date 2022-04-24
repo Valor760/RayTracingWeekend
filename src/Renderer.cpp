@@ -10,7 +10,8 @@
 
 namespace RTWeekend {
 void Renderer::StartRender() {
-    auto rendering_thread = std::thread{ &Renderer::Render, this, m_buffer };
+    //auto rendering_thread = std::thread{ &Renderer::Render, this, m_buffer };
+    Render(m_buffer);
 }
 
 void Renderer::Render(unsigned char* buffer) {
@@ -25,27 +26,41 @@ void Renderer::Render(unsigned char* buffer) {
     std::vector<std::future<void>> futures;
     futures.reserve(m_width * m_height);
 
-    auto renderPixel = [buffer, this, world](const int i,const int j) 
+    //auto renderPixel = [buffer, this, world](const int i,const int j) 
+    //{
+    //    Graphics::Color pixel_color(0, 0, 0);
+    //    for (int s = 0; s < m_samples; s++) {
+    //        auto u = double(i + Graphics::random_double()) / (m_width - 1);
+    //        auto v = double(j + Graphics::random_double()) / (m_height - 1);
+
+    //        Graphics::Ray r = m_camera->GetRay(u, v);
+
+    //        pixel_color += rayColor(r, world, m_depth);
+    //    }
+    //    //buffer[j * width + i] = write_color(pixel_color, samples);
+    //    WriteToBuffer(buffer, i, j, pixel_color);
+    //};
+    auto renderLine = [buffer, this, world](const int line_idx)
     {
-        Graphics::Color pixel_color(0, 0, 0);
-        for (int s = 0; s < m_samples; s++) {
-            auto u = double(i + Graphics::random_double()) / (m_width - 1);
-            auto v = double(j + Graphics::random_double()) / (m_height - 1);
+        for (int i = 0; i < m_width; ++i) {
+            Graphics::Color pixel_color(0, 0, 0);
+            for (int s = 0; s < m_samples; s++) {
+                auto u = double(i + Graphics::random_double()) / (m_width - 1);
+                auto v = double(line_idx + Graphics::random_double()) / (m_height - 1);
 
-            Graphics::Ray r = m_camera->GetRay(u, v);
+                Graphics::Ray r = m_camera->GetRay(u, v);
 
-            pixel_color += rayColor(r, world, m_depth);
+                pixel_color += rayColor(r, world, m_depth);
+            }
+            //buffer[j * width + i] = write_color(pixel_color, samples);
+            WriteToBuffer(buffer, i, line_idx, pixel_color);
         }
-        //buffer[j * width + i] = write_color(pixel_color, samples);
-        WriteToBuffer(buffer, i, j, pixel_color);
     };
 
     for (int j = m_height - 1; j >= 0; --j) {
         std::cerr << "\rLines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < m_width; ++i) {
-            futures.emplace_back(
-                pool.AddTask(renderPixel, i, j));
-        }
+        futures.emplace_back(
+            pool.AddTask(renderLine, j));
     }
     // Wait all tasks
     std::for_each(begin(futures), end(futures), [](auto& future) { future.wait(); });
@@ -125,6 +140,9 @@ double Renderer::getAspectRatio() {
 }
 
 void Renderer::WriteToBuffer(unsigned char* buffer, int ix, int iy, Graphics::Color pixel_color) {
+    // flip the vertical coordinate because the display backend follow the opposite convention
+    iy = m_height - 1 - iy;
+
     auto r = pixel_color.x();
     auto g = pixel_color.y();
     auto b = pixel_color.z();
