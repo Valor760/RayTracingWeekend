@@ -1,17 +1,14 @@
 #include "Renderer.h"
 
-#include <vector>
-#include <future>
-#include <thread>
-
 #include "utils/thread_pool.h"
 #include "graphics/Material.h"
 #include "graphics/Sphere.h"
 
+
 namespace RTWeekend {
 void Renderer::StartRender() {
-    //auto rendering_thread = std::thread{ &Renderer::Render, this, m_buffer };
-    Render(m_buffer);
+    m_renderingThread = std::thread{ &Renderer::Render, this, m_buffer };
+    //Render(m_buffer);
 }
 
 void Renderer::Render(unsigned char* buffer) {
@@ -22,24 +19,10 @@ void Renderer::Render(unsigned char* buffer) {
     Graphics::Point3 lookat(0, 0, 0);
     m_camera = std::make_unique<Graphics::Camera>(lookfrom, lookat, Graphics::vec3(0, 1, 0), 25, getAspectRatio());
     
-    Utils::ThreadPool pool(7);
+    // Create thread pool
+    Utils::ThreadPool pool{};
     std::vector<std::future<void>> futures;
-    futures.reserve(m_width * m_height);
 
-    //auto renderPixel = [buffer, this, world](const int i,const int j) 
-    //{
-    //    Graphics::Color pixel_color(0, 0, 0);
-    //    for (int s = 0; s < m_samples; s++) {
-    //        auto u = double(i + Graphics::random_double()) / (m_width - 1);
-    //        auto v = double(j + Graphics::random_double()) / (m_height - 1);
-
-    //        Graphics::Ray r = m_camera->GetRay(u, v);
-
-    //        pixel_color += rayColor(r, world, m_depth);
-    //    }
-    //    //buffer[j * width + i] = write_color(pixel_color, samples);
-    //    WriteToBuffer(buffer, i, j, pixel_color);
-    //};
     auto renderLine = [buffer, this, world](const int line_idx)
     {
         for (int i = 0; i < m_width; ++i) {

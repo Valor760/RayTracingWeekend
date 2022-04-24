@@ -2,6 +2,9 @@
 #define RENDERER_H
 
 #include <memory>
+#include <vector>
+#include <future>
+#include <thread>
 
 #include "graphics/HittableList.h"
 #include "graphics/Camera.h"
@@ -15,8 +18,8 @@ enum class RenderState {
 
 class Renderer {
 public:
-	const int m_samples = 1;
-	const int m_depth = 2;
+	const int m_samples = 16;
+	const int m_depth = 8;
 	std::unique_ptr<Graphics::Camera> m_camera;
 	const int m_width;
 	const int m_height;
@@ -32,7 +35,10 @@ private:
 	Graphics::Color rayColor(const Graphics::Ray& r, const Graphics::Hittable& world, int depth);
 	void WriteToBuffer(unsigned char* buffer, int ix, int iy, Graphics::Color pixel_color);
 	double getAspectRatio();
+
+private:
 	unsigned char* m_buffer;
+	std::thread m_renderingThread;
 };
 } // namespace RTWeekend
 
