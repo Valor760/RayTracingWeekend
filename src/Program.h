@@ -31,7 +31,8 @@ private:
     GLuint m_VAO;
     GLuint m_texture;
     GLuint m_program;
-    static inline RenderState m_RenderState = RenderState::kRenderStop;
+    static inline bool m_shouldRender = false;
+    static inline bool m_shouldStop = false;
 };
 } // namespace RTWeekend
 #endif

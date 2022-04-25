@@ -7,11 +7,15 @@
 
 namespace RTWeekend {
 void Renderer::StartRender() {
+    if (m_renderState == RenderState::kRenderStop)
+        m_renderingThread.join();
+
     m_renderingThread = std::thread{ &Renderer::Render, this, m_buffer };
-    //Render(m_buffer);
 }
 
 void Renderer::Render(unsigned char* buffer) {
+    m_renderState = RenderState::kRenderRunning;
+
     Graphics::HittableList world = randomScene();
 
     // Initialize camera
@@ -25,6 +29,9 @@ void Renderer::Render(unsigned char* buffer) {
 
     auto renderLine = [buffer, this, world](const int line_idx)
     {
+        if (m_renderState == RenderState::kRenderStop)
+            return; 
+
         for (int i = 0; i < m_width; ++i) {
             Graphics::Color pixel_color(0, 0, 0);
             for (int s = 0; s < m_samples; s++) {
@@ -48,6 +55,7 @@ void Renderer::Render(unsigned char* buffer) {
     // Wait all tasks
     std::for_each(begin(futures), end(futures), [](auto& future) { future.wait(); });
     std::cerr << "\nDone rendering\n";
+    m_renderState = RenderState::kRenderStop;
 }
 
 Graphics::HittableList Renderer::randomScene() {
@@ -142,5 +150,13 @@ void Renderer::WriteToBuffer(unsigned char* buffer, int ix, int iy, Graphics::Co
     buffer[index] = static_cast<unsigned char>(256 * Graphics::clamp(r, 0.0, 0.999));
     buffer[index + 1] = static_cast<unsigned char>(256 * Graphics::clamp(g, 0.0, 0.999));
     buffer[index + 2] = static_cast<unsigned char>(256 * Graphics::clamp(b, 0.0, 0.999));
+}
+
+Renderer::~Renderer() {
+    delete[] m_buffer;
+}
+
+void Renderer::StopRender() {
+    m_renderState = RenderState::kRenderStop;
 }
 } // namespace RTWeekend

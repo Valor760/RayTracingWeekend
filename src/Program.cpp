@@ -19,25 +19,27 @@ void Program::Run() {
     Utils::ThreadPool thread_pool(7);
     Renderer renderer(m_width, m_height, m_bufferData);
 
-    // Run rendering
-    bool rendering = false;
+    // Set projection matrix for fullscreen
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width),
         static_cast<float>(m_height), 0.0f, -1.0f, 1.0f);
+    // Scale texture to match fullscreen
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(m_width, m_height, 1.0f));
+
+    // Run rendering
     while (!glfwWindowShouldClose(window)) {
-        if (m_RenderState == RenderState::kRenderRunning && !rendering) {
+        if (m_shouldRender && !m_shouldStop) {
+            // Allocate buffer
+            memset(m_bufferData, 0, m_width * m_height * 3);
             renderer.StartRender();
-            rendering = true;
+            m_shouldRender = false;
+        }
+        
+        if (m_shouldStop) {
+            renderer.StopRender();
+            m_shouldStop = false;
         }
 
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-
-        // TODO: Play around with this stuff, to figure out how it particulary works
-        model = glm::translate(model, glm::vec3(0.5f * m_width, 0.5f * m_height, 0.0f));
-        model = glm::rotate(model, glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = glm::translate(model, glm::vec3(-0.5f * m_width, -0.5f * m_height, 0.0f));
-
-        model = glm::scale(model, glm::vec3(m_width, m_height, 1.0f));
         glUniformMatrix4fv(glGetUniformLocation(m_program, "model"), 1, false, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(m_program, "projection"), 1, false, glm::value_ptr(projection));
 
@@ -99,16 +101,7 @@ void Program::Init() {
         1.0f, 1.0f, 1.0f, 1.0f,
         1.0f, -1.0f, 1.0f, -1.0f
     };
-    //float vertices[] = {
-    //    // pos      // tex
-    //    0.0f, 1.0f, 0.0f, 1.0f,
-    //    1.0f, 0.0f, 1.0f, 0.0f,
-    //    0.0f, 0.0f, 0.0f, 0.0f,
 
-    //    //-1.0f, 1.0f, -1.0f, 1.0f,
-    //    //1.0f, 1.0f, 1.0f, 1.0f,
-    //    //1.0f, -1.0f, 1.0f, -1.0f
-    //};
 
     // Bind buffers
     glGenVertexArrays(1, &m_VAO);
@@ -149,7 +142,7 @@ void Program::CompileShaders() {
     glShaderSource(sVertex, 1, &vertex_shader, 0);
     glCompileShader(sVertex);
 
-    int success;
+    int success = -1;
     char log[1024];
     // Check vertex shader compilation
     glGetShaderiv(m_program, GL_COMPILE_STATUS, &success);
@@ -191,10 +184,10 @@ void Program::keyCallBack(GLFWwindow* window, int key, int scan_code, int action
 
     // Start rendering
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-        m_RenderState = RenderState::kRenderRunning;
+        m_shouldRender = true;
     // Stop rendering
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        m_RenderState = RenderState::kRenderStop;
+        m_shouldStop = true;
 }
 
 Program::~Program() {

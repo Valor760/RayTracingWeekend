@@ -12,23 +12,26 @@
 
 namespace RTWeekend {
 enum class RenderState {
+	kRenderReady,
 	kRenderStop,
 	kRenderRunning
 };
 
 class Renderer {
 public:
-	const int m_samples = 16;
-	const int m_depth = 8;
+	const int m_samples = 64;
+	const int m_depth = 16;
 	std::unique_ptr<Graphics::Camera> m_camera;
 	const int m_width;
 	const int m_height;
 
 public:
-	Renderer(int _width, int _height, unsigned char* buff) 
+	Renderer(int _width, int _height, unsigned char *const buff) 
 		: m_width(_width), m_height(_height), m_buffer(buff) {}
+	~Renderer();
 	void StartRender();
 	void Render(unsigned char* buffer);
+	void StopRender();
 
 private:
 	Graphics::HittableList randomScene();
@@ -37,8 +40,9 @@ private:
 	double getAspectRatio();
 
 private:
-	unsigned char* m_buffer;
+	unsigned char *const m_buffer = nullptr;
 	std::thread m_renderingThread;
+	RenderState m_renderState = RenderState::kRenderReady;
 };
 } // namespace RTWeekend
 
